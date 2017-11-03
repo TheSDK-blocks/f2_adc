@@ -70,7 +70,6 @@ class f2_adc(rtl,thesdk):
             input_signal = np.array(self.iptr_A.Value)
 
             input_delta = self.full_scale/(2**self.Nbits-1)
-            print('input_delta = %.2f' % input_delta)
             input_quantized = input_delta*np.round((input_signal + self.full_scale/2)/input_delta)
             input_quantized[np.where(input_quantized > self.full_scale)] = self.full_scale
             input_quantized[np.where(input_quantized < 0)] = 0
