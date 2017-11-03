@@ -13,8 +13,10 @@ from rtl import *
 #Simple buffer template
 class f2_adc(rtl,thesdk):
     def __init__(self,*arg): 
-        self.proplist = [ 'Rs' ];    #properties that can be propagated from parent
-        self.Rs = 1;                 # sampling frequency
+        self.proplist = ['Rs', 'full_scale', 'Nbits']    #properties that can be propagated from parent
+        self.Rs = 1000e6  # input sampling frequency
+        self.full_scale = 1  # input is from -full_scale/2 to +full_scale/2 for min and max adc code
+        self.Nbits = 3  # number of bits in the adc quantization
         self.iptr_A = refptr();
         self.model='py';             #can be set externally, but is not propagated
         self._Z = refptr();
@@ -24,37 +26,38 @@ class f2_adc(rtl,thesdk):
             self.copy_propval(parent,self.proplist)
             self.parent =parent;
     def init(self):
-        self.def_rtl()
-        rndpart=os.path.basename(tempfile.mkstemp()[1])
-        self._infile=self._rtlsimpath +'/A_' + rndpart +'.txt'
-        self._outfile=self._rtlsimpath +'/Z_' + rndpart +'.txt'
-        self._rtlcmd=self.get_rtlcmd()
+        pass
+        # self.def_rtl()
+        # rndpart=os.path.basename(tempfile.mkstemp()[1])
+        # self._infile=self._rtlsimpath +'/A_' + rndpart +'.txt'
+        # self._outfile=self._rtlsimpath +'/Z_' + rndpart +'.txt'
+        # self._rtlcmd=self.get_rtlcmd()
 
-    def get_rtlcmd(self):
-        #the could be gathered to rtl class in some way but they are now here for clarity
-        submission = ' bsub -q normal '  
-        rtllibcmd =  'vlib ' +  self._workpath + ' && sleep 2'
-        rtllibmapcmd = 'vmap work ' + self._workpath
-
-        if (self.model is 'vhdl'):
-            rtlcompcmd = ( 'vcom ' + self._rtlsrcpath + '/' + self._name + '.vhd '
-                          + self._rtlsrcpath + '/tb_'+ self._name+ '.vhd' )
-            rtlsimcmd =  ( 'vsim -64 -batch -t 1ps -g g_infile=' + 
-                           self._infile + ' -g g_outfile=' + self._outfile 
-                           + ' work.tb_' + self._name + ' -do "run -all; quit -f;"')
-            rtlcmd =  submission + rtllibcmd  +  ' && ' + rtllibmapcmd + ' && ' + rtlcompcmd +  ' && ' + rtlsimcmd
-
-        elif (self.model is 'sv'):
-            rtlcompcmd = ( 'vlog -work work ' + self._rtlsrcpath + '/' + self._name + '.sv '
-                           + self._rtlsrcpath + '/tb_' + self._name +'.sv')
-            rtlsimcmd = ( 'vsim -64 -batch -t 1ps -voptargs=+acc -g g_infile=' + self._infile
-                          + ' -g g_outfile=' + self._outfile + ' work.tb_' + self._name  + ' -do "run -all; quit;"')
-
-            rtlcmd =  submission + rtllibcmd  +  ' && ' + rtllibmapcmd + ' && ' + rtlcompcmd +  ' && ' + rtlsimcmd
-
-        else:
-            rtlcmd=[]
-        return rtlcmd
+    # def get_rtlcmd(self):
+    #     #the could be gathered to rtl class in some way but they are now here for clarity
+    #     submission = ' bsub -q normal '
+    #     rtllibcmd =  'vlib ' +  self._workpath + ' && sleep 2'
+    #     rtllibmapcmd = 'vmap work ' + self._workpath
+    #
+    #     if (self.model is 'vhdl'):
+    #         rtlcompcmd = ( 'vcom ' + self._rtlsrcpath + '/' + self._name + '.vhd '
+    #                       + self._rtlsrcpath + '/tb_'+ self._name+ '.vhd' )
+    #         rtlsimcmd =  ( 'vsim -64 -batch -t 1ps -g g_infile=' +
+    #                        self._infile + ' -g g_outfile=' + self._outfile
+    #                        + ' work.tb_' + self._name + ' -do "run -all; quit -f;"')
+    #         rtlcmd =  submission + rtllibcmd  +  ' && ' + rtllibmapcmd + ' && ' + rtlcompcmd +  ' && ' + rtlsimcmd
+    #
+    #     elif (self.model is 'sv'):
+    #         rtlcompcmd = ( 'vlog -work work ' + self._rtlsrcpath + '/' + self._name + '.sv '
+    #                        + self._rtlsrcpath + '/tb_' + self._name +'.sv')
+    #         rtlsimcmd = ( 'vsim -64 -batch -t 1ps -voptargs=+acc -g g_infile=' + self._infile
+    #                       + ' -g g_outfile=' + self._outfile + ' work.tb_' + self._name  + ' -do "run -all; quit;"')
+    #
+    #         rtlcmd =  submission + rtllibcmd  +  ' && ' + rtllibmapcmd + ' && ' + rtlcompcmd +  ' && ' + rtlsimcmd
+    #
+    #     else:
+    #         rtlcmd=[]
+    #     return rtlcmd
 
     def run(self,*arg):
         if len(arg)>0:
@@ -64,7 +67,15 @@ class f2_adc(rtl,thesdk):
             par=False
 
         if self.model=='py':
-            out=np.array(self.iptr_A.Value)
+            input_signal = np.array(self.iptr_A.Value)
+
+            input_delta = self.full_scale/(2**self.Nbits-1)
+            print('input_delta = %.2f' % input_delta)
+            input_quantized = input_delta*np.round((input_signal + self.full_scale/2)/input_delta)
+            input_quantized[np.where(input_quantized > self.full_scale)] = self.full_scale
+            input_quantized[np.where(input_quantized < 0)] = 0
+
+            out = input_quantized - self.full_scale/2
             if par:
                 queue.put(out)
             self._Z.Value=out
@@ -100,4 +111,3 @@ class f2_adc(rtl,thesdk):
           self._Z.Value=out
           os.remove(self._infile)
           os.remove(self._outfile)
-
