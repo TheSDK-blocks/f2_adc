@@ -1,5 +1,5 @@
 # f2_adc class 
-# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 02.10.2017 11:52
+# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 22.11.2017 11:05
 import numpy as np
 import tempfile
 import subprocess
@@ -60,6 +60,9 @@ class f2_adc(rtl,thesdk):
     #     return rtlcmd
 
     def run(self,*arg):
+        if np.amax(np.abs(self.iptr_A.Value))>self.full_scale:
+            self.print_log({'type':'W', 'msg':"ADC is clipping"})
+
         if len(arg)>0:
             par=True      #flag for parallel processing
             queue=arg[0]  #multiprocessing.Queue as the first argument
@@ -75,6 +78,7 @@ class f2_adc(rtl,thesdk):
             input_quantized[np.where(input_quantized < 0)] = 0
 
             out = input_quantized - self.full_scale/2
+
             if par:
                 queue.put(out)
             self._Z.Value=out
