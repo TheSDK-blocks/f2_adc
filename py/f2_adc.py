@@ -1,5 +1,5 @@
 # f2_adc class 
-# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 22.11.2017 11:05
+# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 27.11.2017 19:06
 import numpy as np
 import tempfile
 import subprocess
@@ -60,7 +60,7 @@ class f2_adc(rtl,thesdk):
     #     return rtlcmd
 
     def run(self,*arg):
-        if np.amax(np.abs(self.iptr_A.Value))>self.full_scale:
+        if np.amax(np.abs(self.iptr_A.Value))>self.full_scale/2.0:
             self.print_log({'type':'W', 'msg':"ADC is clipping"})
 
         if len(arg)>0:
