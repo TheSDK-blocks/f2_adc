@@ -1,5 +1,5 @@
 # f2_adc class 
-# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 27.11.2017 19:06
+# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 18.12.2017 14:11
 import numpy as np
 import tempfile
 import subprocess
@@ -72,12 +72,17 @@ class f2_adc(rtl,thesdk):
         if self.model=='py':
             input_signal = np.array(self.iptr_A.Value)
 
-            input_delta = self.full_scale/(2**self.Nbits-1)
-            input_quantized = input_delta*np.round((input_signal + self.full_scale/2)/input_delta)
-            input_quantized[np.where(input_quantized > self.full_scale)] = self.full_scale
-            input_quantized[np.where(input_quantized < 0)] = 0
+            #input_delta = self.full_scale/(2**self.Nbits-1)
+            input_delta = 2*self.full_scale/(2**self.Nbits-1)
+            #input_quantized = input_delta*np.round((input_signal + self.full_scale/2)/input_delta)
+            input_quantized = np.round(input_signal/input_delta)
+            #input_quantized[np.where(input_quantized > self.full_scale)] = self.full_scale
+            input_quantized[np.where(input_quantized > 2**(self.Nbits-1)-1)] =  2**(self.Nbits-1)-1
+            input_quantized[np.where(input_quantized <  -(2**(self.Nbits-1)-1))] = -(2**(self.Nbits-1)-1) 
 
-            out = input_quantized - self.full_scale/2
+
+            #out = (input_quantized - self.full_scale/2)*(2**(self.Nbits-1)-1)
+            out = input_quantized
 
             if par:
                 queue.put(out)
