@@ -1,5 +1,5 @@
 # f2_adc class 
-# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 18.12.2017 14:11
+# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 12.04.2018 20:04
 import numpy as np
 import tempfile
 import subprocess
@@ -61,7 +61,7 @@ class f2_adc(rtl,thesdk):
 
     def run(self,*arg):
         if np.amax(np.abs(self.iptr_A.Value))>self.full_scale/2.0:
-            self.print_log({'type':'W', 'msg':"ADC is clipping"})
+            self.print_log({'type':'W', 'msg':"ADC is clipping with absolute value %s that is more than %s."%(np.amax(np.abs(self.iptr_A.Value)),self.full_scale/2.0)} )
 
         if len(arg)>0:
             par=True      #flag for parallel processing
@@ -73,7 +73,7 @@ class f2_adc(rtl,thesdk):
             input_signal = np.array(self.iptr_A.Value)
 
             #input_delta = self.full_scale/(2**self.Nbits-1)
-            input_delta = 2*self.full_scale/(2**self.Nbits-1)
+            input_delta = self.full_scale/(2*(2**(self.Nbits-1)-1))
             #input_quantized = input_delta*np.round((input_signal + self.full_scale/2)/input_delta)
             input_quantized = np.round(input_signal/input_delta)
             #input_quantized[np.where(input_quantized > self.full_scale)] = self.full_scale
