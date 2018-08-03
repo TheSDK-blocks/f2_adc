@@ -1,5 +1,5 @@
 # f2_adc class 
-# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 12.04.2018 20:04
+# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 03.08.2018 11:12
 import numpy as np
 import tempfile
 import subprocess
@@ -8,10 +8,9 @@ import time
 
 from refptr import *
 from thesdk import *
-from rtl import *
 
 #Simple buffer template
-class f2_adc(rtl,thesdk):
+class f2_adc(thesdk):
     def __init__(self,*arg): 
         self.proplist = ['Rs', 'full_scale', 'Nbits']    #properties that can be propagated from parent
         self.Rs = 1000e6  # input sampling frequency
