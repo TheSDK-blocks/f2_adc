@@ -16,9 +16,9 @@ class f2_adc(thesdk):
         self.Rs = 1000e6  # input sampling frequency
         self.full_scale = 1  # input is from -full_scale/2 to +full_scale/2 for min and max adc code
         self.Nbits = 3  # number of bits in the adc quantization
-        self.iptr_A = refptr();
+        self.iptr_A = IO();
         self.model='py';             #can be set externally, but is not propagated
-        self._Z = refptr();
+        self._Z = IO();
         self._classfile=__file__
         if len(arg)>=1:
             parent=arg[0]
@@ -59,8 +59,8 @@ class f2_adc(thesdk):
     #     return rtlcmd
 
     def run(self,*arg):
-        if np.amax(np.abs(self.iptr_A.Value))>self.full_scale/2.0:
-            self.print_log({'type':'W', 'msg':"ADC is clipping with absolute value %s that is more than %s."%(np.amax(np.abs(self.iptr_A.Value)),self.full_scale/2.0)} )
+        if np.amax(np.abs(self.iptr_A.Data))>self.full_scale/2.0:
+            self.print_log({'type':'W', 'msg':"ADC is clipping with absolute value %s that is more than %s."%(np.amax(np.abs(self.iptr_A.Data)),self.full_scale/2.0)} )
 
         if len(arg)>0:
             par=True      #flag for parallel processing
@@ -69,7 +69,7 @@ class f2_adc(thesdk):
             par=False
 
         if self.model=='py':
-            input_signal = np.array(self.iptr_A.Value)
+            input_signal = np.array(self.iptr_A.Data)
 
             #input_delta = self.full_scale/(2**self.Nbits-1)
             input_delta = self.full_scale/(2*(2**(self.Nbits-1)-1))
@@ -85,14 +85,14 @@ class f2_adc(thesdk):
 
             if par:
                 queue.put(out)
-            self._Z.Value=out
+            self._Z.Data=out
         else: 
           try:
               os.remove(self._infile)
           except:
               pass
           fid=open(self._infile,'wb')
-          np.savetxt(fid,np.transpose(self.iptr_A.Value),fmt='%.0f')
+          np.savetxt(fid,np.transpose(self.iptr_A.Data),fmt='%.0f')
           #np.savetxt(fid,np.transpose(inp),fmt='%.0f')
           fid.close()
           while not os.path.isfile(self._infile):
@@ -115,6 +115,6 @@ class f2_adc(thesdk):
           fid.close()
           if par:
               queue.put(out)
-          self._Z.Value=out
+          self._Z.Data=out
           os.remove(self._infile)
           os.remove(self._outfile)
