@@ -26,41 +26,10 @@ class f2_adc(thesdk):
             self.parent =parent;
     def init(self):
         pass
-        # self.def_rtl()
-        # rndpart=os.path.basename(tempfile.mkstemp()[1])
-        # self._infile=self._rtlsimpath +'/A_' + rndpart +'.txt'
-        # self._outfile=self._rtlsimpath +'/Z_' + rndpart +'.txt'
-        # self._rtlcmd=self.get_rtlcmd()
-
-    # def get_rtlcmd(self):
-    #     #the could be gathered to rtl class in some way but they are now here for clarity
-    #     submission = ' bsub -q normal '
-    #     rtllibcmd =  'vlib ' +  self._workpath + ' && sleep 2'
-    #     rtllibmapcmd = 'vmap work ' + self._workpath
-    #
-    #     if (self.model is 'vhdl'):
-    #         rtlcompcmd = ( 'vcom ' + self._rtlsrcpath + '/' + self._name + '.vhd '
-    #                       + self._rtlsrcpath + '/tb_'+ self._name+ '.vhd' )
-    #         rtlsimcmd =  ( 'vsim -64 -batch -t 1ps -g g_infile=' +
-    #                        self._infile + ' -g g_outfile=' + self._outfile
-    #                        + ' work.tb_' + self._name + ' -do "run -all; quit -f;"')
-    #         rtlcmd =  submission + rtllibcmd  +  ' && ' + rtllibmapcmd + ' && ' + rtlcompcmd +  ' && ' + rtlsimcmd
-    #
-    #     elif (self.model is 'sv'):
-    #         rtlcompcmd = ( 'vlog -work work ' + self._rtlsrcpath + '/' + self._name + '.sv '
-    #                        + self._rtlsrcpath + '/tb_' + self._name +'.sv')
-    #         rtlsimcmd = ( 'vsim -64 -batch -t 1ps -voptargs=+acc -g g_infile=' + self._infile
-    #                       + ' -g g_outfile=' + self._outfile + ' work.tb_' + self._name  + ' -do "run -all; quit;"')
-    #
-    #         rtlcmd =  submission + rtllibcmd  +  ' && ' + rtllibmapcmd + ' && ' + rtlcompcmd +  ' && ' + rtlsimcmd
-    #
-    #     else:
-    #         rtlcmd=[]
-    #     return rtlcmd
 
     def run(self,*arg):
         if np.amax(np.abs(self.iptr_A.Data))>self.full_scale/2.0:
-            self.print_log({'type':'W', 'msg':"ADC is clipping with absolute value %s that is more than %s."%(np.amax(np.abs(self.iptr_A.Data)),self.full_scale/2.0)} )
+            self.print_log(type='W', msg="ADC is clipping with absolute value %s that is more than %s."%(np.amax(np.abs(self.iptr_A.Data)),self.full_scale/2.0))
 
         if len(arg)>0:
             par=True      #flag for parallel processing
@@ -87,34 +56,4 @@ class f2_adc(thesdk):
                 queue.put(out)
             self._Z.Data=out
         else: 
-          try:
-              os.remove(self._infile)
-          except:
-              pass
-          fid=open(self._infile,'wb')
-          np.savetxt(fid,np.transpose(self.iptr_A.Data),fmt='%.0f')
-          #np.savetxt(fid,np.transpose(inp),fmt='%.0f')
-          fid.close()
-          while not os.path.isfile(self._infile):
-              #print("Wait infile to appear")
-              time.sleep(1)
-          try:
-              os.remove(self._outfile)
-          except:
-              pass
-          print("Running external command \n", self._rtlcmd , "\n" )
-          subprocess.call(shlex.split(self._rtlcmd));
-          
-          while not os.path.isfile(self._outfile):
-              #print("Wait outfile to appear")
-              time.sleep(1)
-          fid=open(self._outfile,'r')
-          #fid=open(self._infile,'r')
-          #out = .np.loadtxt(fid)
-          out = np.transpose(np.loadtxt(fid))
-          fid.close()
-          if par:
-              queue.put(out)
-          self._Z.Data=out
-          os.remove(self._infile)
-          os.remove(self._outfile)
+            self.print_log(type='F', msg='Model %s not supported' %(self.model))
